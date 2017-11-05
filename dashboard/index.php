@@ -64,7 +64,14 @@ $pdo = $deeb->cnxx;
         FROM domains
         WHERE active NOT IN ('0', '10')")->fetchColumn();
 
-    echo $dashboard->displayPanel('Domains', $total_count, 'green', 'checkmark-circled', '/domains/index.php?is_active=LIVE');
+    $total_cost = $pdo->query("
+		SELECT SUM(total_cost * conversion)
+		FROM domains
+		LEFT JOIN fees f ON f.id = fee_id
+		LEFT JOIN currency_conversions cc ON cc.currency_id = f.currency_id
+        WHERE active NOT IN ('0', '10')")->fetchColumn();
+
+    echo $dashboard->displayPanel(sprintf('Domains<br/><span class="cost">(Cost: <span class="amount">&euro; %s</span>)</span>', number_format($total_cost, 2, ',', '.')), $total_count, 'green', 'checkmark-circled', '/domains/index.php?is_active=LIVE');
 
     //////////////////////////////////////////////////
     // Active SSL Certificates
@@ -135,7 +142,15 @@ if ($total_count_domains || $total_count_ssl) { ?>
 
         if ($total_count) {
 
-            echo $dashboard->displayPanel('Domains', $total_count, 'red', 'close-circled', '/domains/index.php?daterange=' . urlencode($daterange));
+			$total_cost = $pdo->query("
+				SELECT SUM(total_cost * conversion)
+				FROM domains
+				LEFT JOIN fees f ON f.id = fee_id
+				LEFT JOIN currency_conversions cc ON cc.currency_id = f.currency_id
+                WHERE active NOT IN ('0', '10')
+                  AND expiry_date <= '" . $end_date . "'")->fetchColumn();
+
+            echo $dashboard->displayPanel(sprintf('Domains<br/><span class="cost">(Cost: <span class="amount">&euro; %s</span>)</span>', number_format($total_cost, 2, ',', '.')), $total_count, 'red', 'close-circled', '/domains/index.php?daterange=' . urlencode($daterange));
 
         }
 
